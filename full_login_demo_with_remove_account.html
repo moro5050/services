@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Instagram Login Demo</title>
+<style>
+body{font-family:Arial;text-align:center;background:#fafafa}
+.card{width:350px;margin:30px auto;padding:20px;border:1px solid #ddd;border-radius:10px;background:#fff}
+input{width:90%;padding:10px;margin:5px}
+button{padding:10px 20px;margin:5px;cursor:pointer}
+.delete-btn{background:#ed4956;color:#fff;border:none;border-radius:5px;padding:5px 10px}
+table{width:100%;border-collapse:collapse}
+td,th{border-bottom:1px solid #ddd;padding:5px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<div class="card" id="loginCard">
+<h2>Login</h2>
+<input id="loginUser" placeholder="Username">
+<input id="loginPass" type="password" placeholder="Password">
+<br>
+<button onclick="handleLogin()">Login</button>
+<button onclick="showSignup()">Sign Up</button>
+<p id="loginError"></p>
+</div>
+
+<div class="card hidden" id="signupCard">
+<h2>Sign Up</h2>
+<input id="signupName" placeholder="Name">
+<input id="signupUser" placeholder="Username">
+<input id="signupPass" type="password" placeholder="Password">
+<br>
+<button onclick="handleSignup()">Create Account</button>
+<button onclick="showLogin()">Back</button>
+<p id="signupError"></p>
+</div>
+
+<div class="card hidden" id="loggedInCard">
+<h2 id="welcomeName"></h2>
+<p id="welcomeUser"></p>
+<button onclick="handleLogout()">Logout</button>
+</div>
+
+<button onclick="toggleDataPanel()">View Saved Accounts</button>
+<div class="card hidden" id="dataPanel"></div>
+
+<script>
+const STORAGE_KEY='demo_ig_users';
+
+function getUsers(){return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');}
+function saveUsers(u){localStorage.setItem(STORAGE_KEY,JSON.stringify(u));}
+
+function showSignup(){signupCard.classList.remove('hidden');loginCard.classList.add('hidden');}
+function showLogin(){signupCard.classList.add('hidden');loginCard.classList.remove('hidden');}
+
+function handleSignup(){
+ const name=signupName.value.trim();
+ const user=signupUser.value.trim();
+ const pass=signupPass.value;
+ const users=getUsers();
+ if(users[user]) return signupError.innerText='Username exists';
+ users[user]={name,password:pass};
+ saveUsers(users);
+ alert('Account created');
+ showLogin();
+}
+
+function handleLogin(){
+ const users=getUsers();
+ const user=loginUser.value.trim();
+ const pass=loginPass.value;
+ if(!users[user]||users[user].password!==pass){loginError.innerText='Invalid login';return;}
+ localStorage.setItem('demo_ig_session',user);
+ renderLoggedIn(user);
+}
+
+function renderLoggedIn(user){
+ const data=getUsers()[user];
+ loginCard.classList.add('hidden');
+ signupCard.classList.add('hidden');
+ loggedInCard.classList.remove('hidden');
+ welcomeName.innerText=data.name;
+ welcomeUser.innerText='@'+user;
+}
+
+function handleLogout(){
+ localStorage.removeItem('demo_ig_session');
+ loggedInCard.classList.add('hidden');
+ showLogin();
+}
+
+function deleteAccount(username){
+ if(confirm('Delete '+username+'?')){
+   const users=getUsers();
+   delete users[username];
+   saveUsers(users);
+   toggleDataPanel();
+   toggleDataPanel();
+ }
+}
+
+function toggleDataPanel(){
+ const panel=document.getElementById('dataPanel');
+ if(panel.classList.contains('hidden')===false){panel.classList.add('hidden');return;}
+ const users=getUsers();
+ let html='<table><tr><th>Name</th><th>User</th><th>Password</th><th>Action</th></tr>';
+ for(const u in users){
+   html+=`<tr><td>${users[u].name}</td><td>${u}</td><td>${users[u].password}</td><td><button class="delete-btn" onclick="deleteAccount('${u}')">Remove</button></td></tr>`;
+ }
+ html+='</table>';
+ panel.innerHTML=html;
+ panel.classList.remove('hidden');
+}
+
+const session=localStorage.getItem('demo_ig_session');
+if(session && getUsers()[session]) renderLoggedIn(session);
+</script>
+</body>
+</html>
